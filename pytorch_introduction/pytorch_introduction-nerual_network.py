@@ -36,25 +36,51 @@ params = list(net.parameters())
 print(len(params))
 print(params[0].size())
 
-# test0 = torch.randn(1)
-# print(test0)
-# test1 = torch.randn(1,1)
-# print(test1)
-# print("*****test2")
-# test2 = torch.randn(1,2)
-# print(test2)
-# test2_1 = torch.randn(2,3)
-# print(test2_1)
-# test3 = torch.randn(1,2,3)
-# print(test3)
-# test4 = torch.randn(1,2,3,4)
-# print(test4)
-
 input = torch.randn(1,1,32,32)
 print(input)
 out = net(input)
 print(out)
 
-# input = Variable(torch.randn(1, 1, 32, 32))
-# out = net(input)
-# print(out)
+net.zero_grad()
+out.backward(torch.randn(1,10))
+
+#损失函数
+output = net(input)
+target = torch.randn(10)
+target = target.view(1,-1)
+criterion = nn.MSELoss()
+
+loss = criterion(output,target)
+print(loss)
+
+print(loss.grad_fn)
+print(loss.grad_fn.next_functions[0][0])
+print(loss.grad_fn.next_functions[0][0].next_functions[0][0])
+
+#反向传播
+net.zero_grad()
+
+print('conv1.bias.grad before backward')
+print(net.conv1.bias.grad)
+
+loss.backward()
+
+print('conv1.bias.grad after backward')
+print(net.conv1.bias.grad)
+
+#更新权重
+learning_rate = 0.01
+for f in net.parameters():
+    f.data.sub_(f.grad.data * learning_rate)
+
+import torch.optim as optim
+
+#构建优化器
+optimizer = optim.SGD(net.parameters(), lr=0.01)
+
+#训练时循环的语句:
+optimizer.zero_grad()   # 将梯度缓存清零。
+output = net(input)
+loss = criterion(output, target)
+loss.backward()
+optimizer.step()    # 更新权重
